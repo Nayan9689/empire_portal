@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Empire Builder AI Suite</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f8f7f4;color:#1a1a18;min-height:100vh}
+.app{padding:2rem 1rem;max-width:760px;margin:0 auto}
+.hero{text-align:center;padding:2.5rem 0 1.5rem}
+.hero h1{font-size:30px;font-weight:600;margin-bottom:8px;color:#1a1a18}
+.hero p{font-size:15px;color:#6b6b67;line-height:1.6}
+.tag{display:inline-block;font-size:11px;padding:3px 10px;border-radius:6px;margin:4px 3px}
+.tag.free{background:#eaf3de;color:#3b6d11}
+.tag.ai{background:#e6f1fb;color:#185fa5}
+.gratitude{background:#eaf3de;border:1px solid #c0dd97;border-radius:12px;padding:1.1rem 1.25rem;margin:1rem 0 1.5rem;text-align:center;color:#3b6d11;font-size:14px;line-height:1.7}
+.tools-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:1.5rem}
+.tool-btn{background:#fff;border:1px solid #e0dfd8;border-radius:12px;padding:1rem;cursor:pointer;text-align:left;transition:border-color .15s,background .15s;width:100%}
+.tool-btn:hover{border-color:#378add;background:#f0f7ff}
+.tool-btn.active{border-color:#378add;background:#e6f1fb}
+.tool-btn i{font-size:22px;color:#378add;display:block;margin-bottom:8px}
+.tool-btn .tname{font-size:13px;font-weight:600;color:#1a1a18}
+.tool-btn .tdesc{font-size:12px;color:#6b6b67;margin-top:2px}
+.panel{background:#fff;border:1px solid #e0dfd8;border-radius:12px;padding:1.5rem;margin-bottom:1rem;display:none}
+.panel.visible{display:block}
+.panel-head{display:flex;align-items:center;gap:10px;margin-bottom:1.2rem}
+.panel-head i{font-size:22px;color:#378add}
+.panel-head h2{font-size:17px;font-weight:600;color:#1a1a18}
+.field{margin-bottom:12px}
+.field label{font-size:12px;color:#6b6b67;display:block;margin-bottom:4px;font-weight:500}
+.field input,.field textarea{width:100%;padding:9px 12px;border:1px solid #e0dfd8;border-radius:8px;font-size:14px;background:#fafaf8;color:#1a1a18;font-family:inherit;transition:border-color .15s}
+.field input:focus,.field textarea:focus{outline:none;border-color:#378add}
+.field textarea{resize:vertical;min-height:76px}
+.gen-btn{width:100%;padding:11px;background:#378add;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-top:6px;transition:background .15s}
+.gen-btn:hover{background:#185fa5}
+.loading{text-align:center;padding:1.5rem;color:#888;font-size:14px;display:none;align-items:center;justify-content:center;gap:8px}
+.loading.show{display:flex}
+.spinner{width:16px;height:16px;border:2px solid #e0dfd8;border-top-color:#378add;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.output{margin-top:1rem;background:#fafaf8;border:1px solid #e0dfd8;border-radius:8px;padding:1rem;font-size:14px;color:#1a1a18;line-height:1.8;white-space:pre-wrap;display:none;position:relative}
+.output.show{display:block}
+.copy-btn{font-size:12px;color:#378add;background:none;border:1px solid #b5d4f4;border-radius:6px;cursor:pointer;padding:4px 10px;float:right;margin-bottom:8px}
+.copy-btn:hover{background:#e6f1fb}
+.footer{text-align:center;padding:2rem 0 1rem;color:#aaa;font-size:12px;line-height:1.9}
+.footer a{color:#378add;text-decoration:none}
+@media(max-width:480px){.tools-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="hero">
+    <i class="ti ti-building-skyscraper" style="font-size:36px;color:#378add;display:block;margin-bottom:10px"></i>
+    <h1>Empire Builder AI Suite</h1>
+    <p>Every tool that builds empires — powered by AI, completely free, no limits.</p>
+    <div style="margin-top:10px">
+      <span class="tag free"><i class="ti ti-lock-open"></i> Free forever</span>
+      <span class="tag ai"><i class="ti ti-sparkles"></i> AI powered</span>
+      <span class="tag free">∞ Unlimited</span>
+    </div>
+  </div>
+
+  <div class="gratitude">
+    <i class="ti ti-heart" style="font-size:20px"></i><br/>
+    <strong>Gratitude unlocks the fullness of life.</strong><br/>
+    Every great empire was built on gratitude — for vision, for people, for the ground beneath your feet.<br/>
+    Use these tools with a grateful heart and watch what you create. 🙏
+  </div>
+
+  <div class="tools-grid" id="toolGrid"></div>
+  <div id="panelArea"></div>
+
+  <div class="footer">
+    Empire Builder AI Suite · Free Forever · No Limits<br/>
+    <span style="color:#378add">Built with gratitude 🙏 · Powered by Claude AI</span><br/>
+    <small>Made by <a href="https://linkedin.com/in/nayanbaviskar" target="_blank">Nayan Baviskar</a> · BHDataWorks</small>
+  </div>
+</div>
+
+<script>
+const TOOLS = [
+  {id:'deal',icon:'ti-handshake',name:'Deal Memo',desc:'Structure any deal',
+   fields:[
+     {id:'parties',label:'Parties involved',type:'text',ph:'e.g. Acme Corp & TechStart Ltd'},
+     {id:'value',label:'Deal value',type:'text',ph:'e.g. $5M USD'},
+     {id:'nature',label:'Nature of deal',type:'text',ph:'e.g. Strategic partnership, acquisition...'},
+     {id:'terms',label:'Key terms / notes',type:'textarea',ph:'Payment structure, exclusivity, milestones...'}
+   ],
+   prompt:d=>`Draft a professional deal memo between ${d.parties} for a deal valued at ${d.value}. Nature: ${d.nature}. Key terms: ${d.terms}. Include: executive summary, deal structure, value proposition, key terms, conditions precedent, and a closing section. Make it boardroom-ready and compelling.`
+  },
+  {id:'merger',icon:'ti-git-merge',name:'M&A Analysis',desc:'Mergers & acquisitions',
+   fields:[
+     {id:'acquirer',label:'Acquirer company',type:'text',ph:'e.g. MegaCorp Industries'},
+     {id:'target',label:'Target company',type:'text',ph:'e.g. NovaTech Solutions'},
+     {id:'sector',label:'Sector / industry',type:'text',ph:'e.g. B2B SaaS, Healthcare...'},
+     {id:'rationale',label:'Strategic rationale',type:'text',ph:'e.g. Market expansion, tech acquisition...'},
+     {id:'size',label:'Estimated deal size',type:'text',ph:'e.g. $200M'}
+   ],
+   prompt:d=>`Write a professional M&A analysis memo for ${d.acquirer} acquiring ${d.target} in the ${d.sector} sector. Deal size: ${d.size}. Strategic rationale: ${d.rationale}. Include: strategic fit, synergies, valuation considerations, integration risks, recommended deal structure, and a final recommendation. Format as a board-level document.`
+  },
+  {id:'invest',icon:'ti-chart-line',name:'Investment Thesis',desc:'Pitch any investment',
+   fields:[
+     {id:'company',label:'Company / asset',type:'text',ph:'e.g. Series A SaaS startup'},
+     {id:'amount',label:'Investment amount',type:'text',ph:'e.g. $2M'},
+     {id:'stage',label:'Stage / type',type:'text',ph:'e.g. Seed, Series A, Real estate...'},
+     {id:'upside',label:'Expected upside',type:'text',ph:'e.g. 10x in 5 years'},
+     {id:'risks',label:'Key risks',type:'text',ph:'e.g. Competition, regulatory...'}
+   ],
+   prompt:d=>`Write a compelling investment thesis for ${d.company}. Amount: ${d.amount}. Stage: ${d.stage}. Expected return: ${d.upside}. Key risks: ${d.risks}. Include: market opportunity, investment rationale, competitive moat, financial projections summary, risk mitigation, and a strong closing recommendation. Make it sound like it's from a top-tier VC or PE fund.`
+  },
+  {id:'cheque',icon:'ti-receipt',name:'Cheque / Payment',desc:'Draft payment docs',
+   fields:[
+     {id:'payer',label:'Payer name',type:'text',ph:'e.g. Nayan Enterprises Pvt Ltd'},
+     {id:'payee',label:'Payee name',type:'text',ph:'e.g. Global Supplies Co.'},
+     {id:'amount',label:'Amount',type:'text',ph:'e.g. ₹5,00,000 / $6,000'},
+     {id:'purpose',label:'Purpose / memo',type:'text',ph:'e.g. Q2 consulting retainer'},
+     {id:'date',label:'Date',type:'text',ph:'e.g. June 27, 2026'}
+   ],
+   prompt:d=>`Create a formal payment instruction / cheque covering letter from ${d.payer} to ${d.payee} for the amount ${d.amount} dated ${d.date}, for the purpose: ${d.purpose}. Include a formatted cheque representation, a formal covering letter, and payment confirmation language. Make it professional and bank-ready.`
+  },
+  {id:'news',icon:'ti-news',name:'Newspaper Article',desc:'Write press-worthy stories',
+   fields:[
+     {id:'headline',label:'Headline / topic',type:'text',ph:'e.g. BHDataWorks raises $10M Series A'},
+     {id:'publication',label:'Publication name',type:'text',ph:'e.g. Economic Times, Forbes...'},
+     {id:'angle',label:'Story angle',type:'text',ph:'e.g. Underdog success story, market disruption...'},
+     {id:'quotes',label:'Quotes / sources (optional)',type:'textarea',ph:'CEO said..., Industry expert said...'}
+   ],
+   prompt:d=>`Write a professional newspaper article for ${d.publication} with headline: "${d.headline}". Story angle: ${d.angle}. Quotes/sources: ${d.quotes || 'Generate realistic quotes from CEO and industry experts'}. Format with: headline, subheadline, dateline, lede paragraph, body (4-6 paragraphs with quotes), and closing. Write in journalism style — AP format, punchy, credible.`
+  },
+  {id:'contract',icon:'ti-file-text',name:'Business Contract',desc:'Legal-grade agreements',
+   fields:[
+     {id:'type',label:'Contract type',type:'text',ph:'e.g. NDA, Service agreement, JV...'},
+     {id:'party1',label:'Party 1',type:'text',ph:'e.g. Your company name'},
+     {id:'party2',label:'Party 2',type:'text',ph:'e.g. Client / partner name'},
+     {id:'scope',label:'Scope / subject matter',type:'textarea',ph:'What this contract covers...'},
+     {id:'duration',label:'Duration',type:'text',ph:'e.g. 12 months from signing'}
+   ],
+   prompt:d=>`Draft a professional ${d.type} between ${d.party1} (Party A) and ${d.party2} (Party B). Duration: ${d.duration}. Scope: ${d.scope}. Include: recitals, definitions, obligations of each party, payment terms, confidentiality, IP ownership, termination clauses, dispute resolution, governing law, and signature blocks. Format as a proper legal document.`
+  },
+  {id:'pitch',icon:'ti-presentation',name:'Pitch Deck Script',desc:'Investor pitch narration',
+   fields:[
+     {id:'company',label:'Company name',type:'text',ph:'e.g. BHDataWorks'},
+     {id:'product',label:'What you do',type:'text',ph:'e.g. AI-powered analytics for retail'},
+     {id:'market',label:'Target market',type:'text',ph:'e.g. SME retailers in India'},
+     {id:'ask',label:'Fundraising ask',type:'text',ph:'e.g. $500K seed round'},
+     {id:'traction',label:'Traction so far',type:'text',ph:'e.g. 3 clients, ₹12L revenue...'}
+   ],
+   prompt:d=>`Write a compelling 10-slide investor pitch deck narration script for ${d.company}. Product: ${d.product}. Market: ${d.market}. Ask: ${d.ask}. Traction: ${d.traction}. Script each slide: 1. Cover, 2. Problem, 3. Solution, 4. Market Size (TAM/SAM/SOM), 5. Product, 6. Traction, 7. Business Model, 8. Team, 9. Financials/Projections, 10. The Ask. Make it VC-ready and persuasive.`
+  },
+  {id:'empire',icon:'ti-crown',name:'Empire Blueprint',desc:'Build your business vision',
+   fields:[
+     {id:'name',label:'Empire / conglomerate name',type:'text',ph:'e.g. BH Empire Group'},
+     {id:'sector',label:'Core sectors',type:'text',ph:'e.g. Data, Real estate, Media'},
+     {id:'vision',label:'Your grand vision',type:'textarea',ph:'What empire do you want to build in 10 years?'},
+     {id:'capital',label:'Starting capital',type:'text',ph:'e.g. ₹50L / bootstrapped'}
+   ],
+   prompt:d=>`Create a comprehensive 10-year empire-building blueprint for ${d.name} across sectors: ${d.sector}. Starting capital: ${d.capital}. Vision: ${d.vision}. Include: Year 1-3 foundation phase, Year 4-6 expansion phase, Year 7-10 empire phase, revenue targets per phase, key acquisitions strategy, talent pyramid, brand architecture, and a motivational founder's manifesto. Make it feel like a Tata or Ambani group founding document.`
+  },
+  {id:'letter',icon:'ti-mail',name:'Business Letter',desc:'Executive correspondence',
+   fields:[
+     {id:'from',label:'From',type:'text',ph:'e.g. Nayan Baviskar, CEO, BHDataWorks'},
+     {id:'to',label:'To',type:'text',ph:'e.g. CFO, MetLife India'},
+     {id:'subject',label:'Subject',type:'text',ph:'e.g. Partnership proposal'},
+     {id:'body',label:'Key message / purpose',type:'textarea',ph:'What do you want to communicate?'}
+   ],
+   prompt:d=>`Write a formal executive business letter from ${d.from} to ${d.to} on the subject: "${d.subject}". Key message: ${d.body}. Format with: date, addresses, formal salutation, 3-4 well-crafted paragraphs, professional closing, and signature block. Tone: confident, respectful, action-oriented. Make it feel like it came from a Fortune 500 executive's desk.`
+  },
+  {id:'valuation',icon:'ti-calculator',name:'Valuation Report',desc:'Company valuation analysis',
+   fields:[
+     {id:'company',label:'Company name',type:'text',ph:'e.g. NovaTech Pvt Ltd'},
+     {id:'revenue',label:'Annual revenue',type:'text',ph:'e.g. ₹2 Cr / $500K'},
+     {id:'sector',label:'Sector',type:'text',ph:'e.g. SaaS, Retail, Fintech'},
+     {id:'stage',label:'Stage',type:'text',ph:'e.g. Early-stage, Growth, Pre-IPO'},
+     {id:'method',label:'Valuation method',type:'text',ph:'e.g. DCF, Comparable, Revenue multiple'}
+   ],
+   prompt:d=>`Write a professional company valuation report for ${d.company} in the ${d.sector} sector. Annual revenue: ${d.revenue}. Stage: ${d.stage}. Preferred method: ${d.method}. Include: executive summary, business overview, market context, valuation methodology explanation, comparable analysis, final valuation range (bear/base/bull case), key assumptions, and caveats. Format like a Big 4 consulting firm's valuation report.`
+  },
+  {id:'press',icon:'ti-speakerphone',name:'Press Release',desc:'Official announcements',
+   fields:[
+     {id:'company',label:'Company',type:'text',ph:'e.g. BHDataWorks'},
+     {id:'announcement',label:'What are you announcing?',type:'text',ph:'e.g. New product launch, funding, award...'},
+     {id:'detail',label:'Key details',type:'textarea',ph:'Specifics, numbers, context...'},
+     {id:'contact',label:'Contact person',type:'text',ph:'e.g. Nayan Baviskar, nayan@bhdataworks.com'}
+   ],
+   prompt:d=>`Write an official press release for ${d.company} announcing: ${d.announcement}. Details: ${d.detail}. Contact: ${d.contact}. Format with: FOR IMMEDIATE RELEASE header, dateline, headline, subheadline, lede, body (3-4 paragraphs), boilerplate "About ${d.company}" section, ### end marker, and media contact. Write in AP wire style — newsy, factual, quotable.`
+  },
+  {id:'gratitude2',icon:'ti-heart',name:'Gratitude Letter',desc:'Express abundance & thanks',
+   fields:[
+     {id:'from',label:'From',type:'text',ph:'e.g. Nayan Baviskar'},
+     {id:'to',label:'To',type:'text',ph:'e.g. My team, mentor, investor, universe...'},
+     {id:'reason',label:'What are you grateful for?',type:'textarea',ph:'A milestone, support received, journey so far...'},
+     {id:'tone',label:'Tone',type:'text',ph:'e.g. Heartfelt, spiritual, professional, poetic'}
+   ],
+   prompt:d=>`Write a deeply moving gratitude letter from ${d.from} to ${d.to}. Reason for gratitude: ${d.reason}. Tone: ${d.tone}. Weave in themes of abundance, divine timing, and the belief that what you are grateful for, you attract more of. Make it feel like it was written from a place of overflowing joy and genuine heart. Include a blessing or closing prayer/affirmation.`
+  }
+];
+
+const grid = document.getElementById('toolGrid');
+const panelArea = document.getElementById('panelArea');
+let activeTool = null;
+
+TOOLS.forEach(tool => {
+  const btn = document.createElement('button');
+  btn.className = 'tool-btn';
+  btn.id = 'btn-'+tool.id;
+  btn.innerHTML = `<i class="ti ${tool.icon}"></i><div class="tname">${tool.name}</div><div class="tdesc">${tool.desc}</div>`;
+  btn.onclick = () => openTool(tool);
+  grid.appendChild(btn);
+});
+
+function openTool(tool) {
+  document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-'+tool.id).classList.add('active');
+  activeTool = tool;
+
+  let html = `<div class="panel visible" id="mainPanel">
+    <div class="panel-head">
+      <i class="ti ${tool.icon}"></i>
+      <h2>${tool.name}</h2>
+    </div>`;
+
+  tool.fields.forEach(f => {
+    html += `<div class="field"><label>${f.label}</label>`;
+    if(f.type==='textarea') html += `<textarea id="f_${f.id}" placeholder="${f.ph}"></textarea>`;
+    else html += `<input type="text" id="f_${f.id}" placeholder="${f.ph}" />`;
+    html += `</div>`;
+  });
+
+  html += `<button class="gen-btn" onclick="generate()"><i class="ti ti-sparkles"></i> Generate with AI</button>
+    <div class="loading" id="loadingEl"><div class="spinner"></div> AI is crafting your document…</div>
+    <div class="output" id="outputEl"></div>
+  </div>`;
+
+  panelArea.innerHTML = html;
+  document.getElementById('mainPanel').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+async function generate() {
+  const tool = activeTool;
+  if(!tool) return;
+  const data = {};
+  tool.fields.forEach(f => {
+    const el = document.getElementById('f_'+f.id);
+    data[f.id] = el ? el.value.trim() : '';
+  });
+
+  const prompt = tool.prompt(data);
+  const loadingEl = document.getElementById('loadingEl');
+  const outputEl = document.getElementById('outputEl');
+  loadingEl.classList.add('show');
+  outputEl.classList.remove('show');
+  outputEl.textContent = '';
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:1000,
+        system:'You are an elite business document writer and strategic advisor used by billionaires, top VCs, and Fortune 500 executives. Write with authority, precision, and impact. Every document you produce should feel boardroom-ready. Never include meta-commentary — output only the document itself.',
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const d = await resp.json();
+    const text = d.content?.map(c=>c.text||'').join('') || 'Error — please try again.';
+    loadingEl.classList.remove('show');
+    outputEl.innerHTML = '';
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'copy-btn';
+    copyBtn.innerHTML = '<i class="ti ti-copy"></i> Copy';
+    copyBtn.onclick = () => { navigator.clipboard.writeText(text); copyBtn.innerHTML='<i class="ti ti-check"></i> Copied!'; setTimeout(()=>{copyBtn.innerHTML='<i class="ti ti-copy"></i> Copy'},2000); };
+    outputEl.appendChild(copyBtn);
+    const pre = document.createElement('div');
+    pre.style.whiteSpace = 'pre-wrap';
+    pre.textContent = text;
+    outputEl.appendChild(pre);
+    outputEl.classList.add('show');
+  } catch(e) {
+    loadingEl.classList.remove('show');
+    outputEl.textContent = 'Error: '+e.message;
+    outputEl.classList.add('show');
+  }
+}
+</script>
+</body>
+</html>
